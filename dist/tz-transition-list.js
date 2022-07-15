@@ -11,6 +11,7 @@ const tz_transition_1 = require("./tz-transition");
 const util_1 = require("@tubular/util");
 const time_1 = require("@tubular/time");
 const tz_util_1 = require("./tz-util");
+const tz_rule_1 = require("./tz-rule");
 const population_and_country_data_1 = require("./population-and-country-data");
 const tz_writer_1 = require("./tz-writer");
 var Rollbacks;
@@ -50,7 +51,7 @@ class TzTransitionList extends Array {
             const curr = this[i];
             const before = (0, tz_util_1.makeTime)(curr.time - 1, prev.utcOffset).tz(time_1.Timezone.ZONELESS, true);
             const after = (0, tz_util_1.makeTime)(curr.time, curr.utcOffset).tz(time_1.Timezone.ZONELESS, true);
-            if (after.compare(before, 'days') < 0) {
+            if (after.compare(before, "days") < 0) {
                 ++rollbackCount;
                 const turnbackTime = (0, tz_util_1.makeTime)(curr.time, prev.utcOffset);
                 const wallTime = turnbackTime.wallTime;
@@ -62,7 +63,7 @@ class TzTransitionList extends Array {
                     const forayMinutes = (0, math_1.div_rd)(forayIntoNextDay, 60);
                     const foraySeconds = forayIntoNextDay % 60;
                     progress(tz_writer_1.TzPhase.REENCODE, tz_writer_1.TzMessageLevel.LOG, `* ${this.zoneId}: ${before.format(tz_util_1.DT_FORMAT)} rolls back to ${after.format(tz_util_1.DT_FORMAT)}` +
-                        ` (${forayMinutes} minute${foraySeconds > 0 ? ', ' + foraySeconds + ' second' : ''} foray into next day)`);
+                        ` (${forayMinutes} minute${foraySeconds > 0 ? ", " + foraySeconds + " second" : ""} foray into next day)`);
                     warningShown = true;
                 }
                 if (fixRollbacks)
@@ -71,13 +72,13 @@ class TzTransitionList extends Array {
         }
         let stillHasRollbacks = false;
         if (rollbackCount > 0 && fixRollbacks)
-            stillHasRollbacks = (this.findCalendarRollbacks(false, progress) === Rollbacks.ROLLBACKS_FOUND);
+            stillHasRollbacks = this.findCalendarRollbacks(false, progress) === Rollbacks.ROLLBACKS_FOUND;
         if (warningShown) {
             if (fixRollbacks) {
                 if (stillHasRollbacks)
-                    progress(tz_writer_1.TzPhase.REENCODE, tz_writer_1.TzMessageLevel.WARN, `  *** ${this.zoneId} rollback${rollbackCount > 1 ? 's' : ''} NOT FIXED ***`);
+                    progress(tz_writer_1.TzPhase.REENCODE, tz_writer_1.TzMessageLevel.WARN, `  *** ${this.zoneId} rollback${rollbackCount > 1 ? "s" : ""} NOT FIXED ***`);
                 else
-                    progress(tz_writer_1.TzPhase.REENCODE, tz_writer_1.TzMessageLevel.LOG, '  * fixed *');
+                    progress(tz_writer_1.TzPhase.REENCODE, tz_writer_1.TzMessageLevel.LOG, "  * fixed *");
             }
         }
         if (rollbackCount === 0)
@@ -94,7 +95,7 @@ class TzTransitionList extends Array {
             const prev = this[i - 1];
             const curr = this[i];
             if (curr.time === prev.time ||
-                !strict && curr.utcOffset === prev.utcOffset && curr.dstOffset === prev.dstOffset && curr.name === prev.name)
+                (!strict && curr.utcOffset === prev.utcOffset && curr.dstOffset === prev.dstOffset && curr.name === prev.name))
                 this.splice(i--, 1);
         }
     }
@@ -105,8 +106,11 @@ class TzTransitionList extends Array {
         for (let i = 0; i < this.length; ++i) {
             const t = this[i];
             let prev;
-            if (i > 0 && t.utcOffset === (prev = this[i - 1]).utcOffset && t.name === prev.name &&
-                prev.dstOffset > 0 && t.dstOffset === 0) {
+            if (i > 0 &&
+                t.utcOffset === (prev = this[i - 1]).utcOffset &&
+                t.name === prev.name &&
+                prev.dstOffset > 0 &&
+                t.dstOffset === 0) {
                 lastWasNegative = true;
                 lastNegativeOffset = -prev.dstOffset;
                 lastNegativeSave = prev.rule ? -prev.rule.save : lastNegativeOffset;
@@ -175,31 +179,36 @@ class TzTransitionList extends Array {
     //
     // Though somewhat similar in appearance, the format is not compatible.
     createCompactTransitionTable(fixCalendarRollbacks = false) {
-        let sb = '';
+        let sb = "";
         const baseOffset = this[0].utcOffset;
         const [nominalStdOffset, nominalDstOffset, finalStdRule, finalDstRule] = this.findFinalRulesAndOffsets();
-        sb += formatUtcOffset(baseOffset, true) + ' ' + formatUtcOffset(nominalStdOffset, true) +
-            ' ' + (0, math_1.div_rd)(nominalDstOffset, 60) + ';';
+        sb +=
+            formatUtcOffset(baseOffset, true) +
+                " " +
+                formatUtcOffset(nominalStdOffset, true) +
+                " " +
+                (0, math_1.div_rd)(nominalDstOffset, 60) +
+                ";";
         const uniqueOffsetList = [];
         const offsetList = [];
         for (const t of this) {
-            let offset = (0, tz_util_1.toBase60)(t.utcOffset / 60) + '/' + (0, tz_util_1.toBase60)(t.dstOffset / 60);
+            let offset = (0, tz_util_1.toBase60)(t.utcOffset / 60) + "/" + (0, tz_util_1.toBase60)(t.dstOffset / 60);
             if (t.name != null && t.name.length !== 0)
-                offset += '/' + t.name;
+                offset += "/" + t.name;
             if (!uniqueOffsetList.includes(offset))
                 uniqueOffsetList.push(offset);
             offsetList.push(offset);
         }
         for (const offset of uniqueOffsetList)
-            sb += offset + ' ';
-        sb = sb.trimEnd() + ';';
+            sb += offset + " ";
+        sb = sb.trimEnd() + ";";
         for (let i = 1; i < this.length; ++i)
             sb += (0, tz_util_1.toBase60)(uniqueOffsetList.indexOf(offsetList[i]));
-        sb += ';';
+        sb += ";";
         let lastTime = 0;
         for (let i = 1; i < this.length; ++i) {
             const t = this[i];
-            sb += (0, tz_util_1.toBase60)((t.time - lastTime) / 60) + ' ';
+            sb += (0, tz_util_1.toBase60)((t.time - lastTime) / 60) + " ";
             lastTime = t.time;
         }
         sb = sb.trimEnd();
@@ -228,33 +237,45 @@ class TzTransitionList extends Array {
             }
             sb += `;${finalStdRule.toCompactTailRule()},${finalDstRule.toCompactTailRule()}`;
         }
-        sb = sb.replace(/;$/, '');
+        sb = sb.replace(/;$/, "");
         return sb;
+    }
+    createPosixRule() {
+        const [nominalStdOffset, nominalDstOffset, finalStdRule, finalDstRule] = this.findFinalRulesAndOffsets();
+        if (finalStdRule != null && finalDstRule != null) {
+            return finalStdRule.toPosixRule(nominalStdOffset, "ASD", finalDstRule, "ASD");
+        }
+        else {
+            const stdRule = tz_rule_1.TzRule.parseRule("Rule\tUS\t2007\tmax\t-\tNov\tSun>=1\t2:00\t0\tS");
+            return stdRule.toPosixRule(nominalStdOffset, "ASD");
+        }
     }
     dump(out = process.stdout, roundToMinutes = false) {
         const write = (s) => {
-            out.write(s + '\n');
+            out.write(s + "\n");
         };
         const formatOffset = (offset) => {
-            return formatUtcOffset(offset, true).padEnd(roundToMinutes ? 5 : 7, '0');
+            return formatUtcOffset(offset, true).padEnd(roundToMinutes ? 5 : 7, "0");
         };
         write(`-------- ${this.zoneId} --------`);
         if (this.aliasFor)
             write(`  Alias for ${this.aliasFor}`);
         else if (this.length === 0)
-            write('  (empty)');
+            write("  (empty)");
         else if (this.length === 1) {
             const tzt = this[0];
-            write(`  Fixed UTC offset at ${formatUtcOffset(tzt.utcOffset)}${tzt.name != null ? ' ' + tzt.name : ''}`);
+            write(`  Fixed UTC offset at ${formatUtcOffset(tzt.utcOffset)}${tzt.name != null ? " " + tzt.name : ""}`);
         }
         else {
             const tzt = this[0];
-            const format = tz_util_1.DT_FORMAT + (roundToMinutes ? '' : ':ss');
-            const offsetSpace = '_'.repeat(roundToMinutes ? 4 : 6);
-            const secs = roundToMinutes ? '' : ':__';
+            const format = tz_util_1.DT_FORMAT + (roundToMinutes ? "" : ":ss");
+            const offsetSpace = "_".repeat(roundToMinutes ? 4 : 6);
+            const secs = roundToMinutes ? "" : ":__";
             write(`  ____-__-__ __:__${secs} ±${offsetSpace} ±${offsetSpace} --> ____-__-__ __:__${secs} ` +
-                formatOffset(tzt.utcOffset) + ' ' + formatOffset(tzt.dstOffset) +
-                (tzt.name != null ? ' ' + tzt.name : ''));
+                formatOffset(tzt.utcOffset) +
+                " " +
+                formatOffset(tzt.dstOffset) +
+                (tzt.name != null ? " " + tzt.name : ""));
             for (let i = 1; i < this.length; ++i) {
                 const prev = this[i - 1];
                 const prevOffset = prev.utcOffset;
@@ -262,11 +283,20 @@ class TzTransitionList extends Array {
                 const currOffset = curr.utcOffset;
                 const prevDateTime = (0, tz_util_1.makeTime)(curr.time - 1, prevOffset);
                 const currDateTime = (0, tz_util_1.makeTime)(curr.time, currOffset);
-                write('  ' + prevDateTime.format(format) + ' ' + formatOffset(prev.utcOffset) +
-                    ' ' + formatOffset(prev.dstOffset) + ' --> ' +
-                    currDateTime.format(format) + ' ' + formatOffset(curr.utcOffset) +
-                    ' ' + formatOffset(curr.dstOffset) +
-                    (curr.name != null ? ' ' + curr.name : '') + (curr.dstOffset !== 0 ? '*' : ''));
+                write("  " +
+                    prevDateTime.format(format) +
+                    " " +
+                    formatOffset(prev.utcOffset) +
+                    " " +
+                    formatOffset(prev.dstOffset) +
+                    " --> " +
+                    currDateTime.format(format) +
+                    " " +
+                    formatOffset(curr.utcOffset) +
+                    " " +
+                    formatOffset(curr.dstOffset) +
+                    (curr.name != null ? " " + curr.name : "") +
+                    (curr.dstOffset !== 0 ? "*" : ""));
             }
             const [, , finalStdRule, finalDstRule] = this.findFinalRulesAndOffsets();
             if (finalStdRule)
@@ -301,10 +331,11 @@ class TzTransitionList extends Array {
             const transitionCount1 = buf.readUInt32BE(offset + 12);
             const typeCount1 = buf.readUInt32BE(offset + 16);
             const charCount = buf.readUInt32BE(offset + 20);
-            offset += tzh_ttisutcnt + tzh_ttisstdcnt + tzh_leapcnt * 4 + transitionCount1 * 5 + typeCount1 * 6 + charCount + 56;
+            offset +=
+                tzh_ttisutcnt + tzh_ttisstdcnt + tzh_leapcnt * 4 + transitionCount1 * 5 + typeCount1 * 6 + charCount + 56;
         }
         const transitionCount = buf.readUInt32BE(offset);
-        const typeCount = buf.readUInt32BE(offset += 4);
+        const typeCount = buf.readUInt32BE((offset += 4));
         const times = new Array(transitionCount);
         const typeIndices = new Uint8Array(transitionCount);
         offset += 8;
@@ -318,15 +349,15 @@ class TzTransitionList extends Array {
                 offset += 4;
             }
         }
-        buf.copy(typeIndices, 0, offset, offset += transitionCount);
+        buf.copy(typeIndices, 0, offset, (offset += transitionCount));
         const offsets = new Array(typeCount);
         const dstFlags = new Array(typeCount);
         const nameIndices = new Uint8Array(typeCount);
         const names = new Array(typeCount);
         for (let i = 0; i < typeCount; ++i) {
             offsets[i] = buf.readInt32BE(offset);
-            dstFlags[i] = (buf.readInt8(offset += 4) !== 0);
-            nameIndices[i] = buf.readInt8(offset += 1);
+            dstFlags[i] = buf.readInt8((offset += 4)) !== 0;
+            nameIndices[i] = buf.readInt8((offset += 1));
             ++offset;
         }
         const namesOffset = offset;
@@ -336,10 +367,10 @@ class TzTransitionList extends Array {
             let end = index;
             while (buf.readInt8(namesOffset + end) !== 0)
                 ++end;
-            names[i] = buf.toString('utf8', namesOffset + index, namesOffset + end);
+            names[i] = buf.toString("utf8", namesOffset + index, namesOffset + end);
         }
         for (let i = 0; i <= transitionCount; ++i) {
-            const type = (i < 1 ? 0 : typeIndices[i - 1]);
+            const type = i < 1 ? 0 : typeIndices[i - 1];
             let tTime;
             const offset = conditionallyRoundToMinutes(offsets[type], roundToMinutes);
             const isDst = dstFlags[type];
@@ -365,8 +396,8 @@ class TzTransitionList extends Array {
             report(`*** ${this.zoneId}: ${this.length} != ${otherList.length}`);
             return false;
         }
-        const roundingAllowance = (roundToMinutes ? 60 : 0);
-        const start = (exact ? 0 : 1);
+        const roundingAllowance = roundToMinutes ? 60 : 0;
+        const start = exact ? 0 : 1;
         for (let i = start, j = start; i < this.length && j < otherList.length; ++i, ++j) {
             const ti1 = this[i];
             const ti2 = otherList[j];
@@ -382,7 +413,7 @@ class TzTransitionList extends Array {
                 (0, math_1.abs)(ti1.utcOffset - ti2.utcOffset) < roundingAllowance ||
                 (0, math_1.abs)(ti1.dstOffset - ti2.dstOffset) < roundingAllowance ||
                 ti1.name !== ti2.name) {
-                report(`*** ${this.zoneId}, mismatch at index ${i}${i !== j ? '/' + j : ''}`);
+                report(`*** ${this.zoneId}, mismatch at index ${i}${i !== j ? "/" + j : ""}`);
                 report(`  1: ${ti1.time}, ${ti1.utcOffset}, ${ti1.dstOffset}, ${ti1.name}: ${ti1.formatTime()}`);
                 report(`  2: ${ti2.time}, ${ti2.utcOffset}, ${ti2.dstOffset}, ${ti2.name}: ${ti2.formatTime()}`);
                 report(`  -: ${ti2.time - ti1.time}`);

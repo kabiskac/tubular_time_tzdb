@@ -22,6 +22,7 @@ export declare class TzTransitionList extends Array<TzTransition> {
     eliminateNegativeDst(): void;
     trim(minYear: number, maxYear: number): void;
     createCompactTransitionTable(fixCalendarRollbacks?: boolean): string;
+    createPosixRule(): string;
     dump(out?: NodeJS.WriteStream, roundToMinutes?: boolean): void;
     static getZoneTransitionsFromZoneinfo(zoneInfoPath: string, zoneId: string, roundToMinutes?: boolean): TzTransitionList;
     transitionsMatch(otherList: TzTransitionList, exact?: boolean, roundToMinutes?: boolean, progress?: TzCallback): boolean;

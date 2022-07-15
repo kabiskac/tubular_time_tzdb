@@ -38,8 +38,10 @@ export interface TzOptions {
     maxYear?: number;
     minYear?: number;
     mode?: TzMode;
+    noAliases?: boolean;
     noBackward?: boolean;
     packrat?: boolean;
+    posixFormat?: boolean;
     preset?: TzPresets;
     roundToMinutes?: boolean;
     singleRegionOrZone?: string;

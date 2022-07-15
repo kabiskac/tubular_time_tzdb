@@ -31,8 +31,10 @@ export interface TzOptions {
   maxYear?: number;
   minYear?: number;
   mode?: TzMode;
+  noAliases?: boolean;
   noBackward?: boolean;
   packrat?: boolean;
+  posixFormat?: boolean;
   preset?: TzPresets;
   roundToMinutes?: boolean;
   singleRegionOrZone?: string;
@@ -326,7 +328,7 @@ export async function writeTimezones(options: TzOutputOptions = {}): Promise<voi
 
       const delim = (i < zoneList.length - 1 ? ',' : '');
 
-      if (zone.aliasFor && zoneList.includes(zone.aliasFor)) {
+      if (!options.noAliases && zone.aliasFor && zoneList.includes(zone.aliasFor)) {
         let aliasFor = zone.aliasFor;
         const popAndC = getPopulationAndCountries(zoneId);
         const aliasPopAndC = getPopulationAndCountries(aliasFor);
@@ -343,12 +345,16 @@ export async function writeTimezones(options: TzOutputOptions = {}): Promise<voi
         write(`  ${qt}${zoneId}${qt}: ${qt}${aliasFor}${qt}${delim}`);
       }
       else {
-        let ctt = cttsByZone.get(zoneId);
+        if (options.posixFormat) {
+            write(`  ${qt}${zoneId}${qt}: ${qt}${zone.createPosixRule()}${qt}${delim}`);
+        }
+        else {
+          let ctt = cttsByZone.get(zoneId);
 
-        if (!ctt)
-          ctt = zone.createCompactTransitionTable(options.fixRollbacks);
+          if (!ctt) ctt = zone.createCompactTransitionTable(options.fixRollbacks);
 
-        write(`  ${qt}${zoneId}${qt}: ${qt}${appendPopulationAndCountries(ctt, zoneId)}${qt}${delim}`);
+          write(`  ${qt}${zoneId}${qt}: ${qt}${appendPopulationAndCountries(ctt, zoneId)}${qt}${delim}`);
+        }
       }
 
       resolve();

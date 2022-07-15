@@ -287,7 +287,7 @@ async function writeTimezones(options = {}) {
                 return;
             }
             const delim = (i < zoneList.length - 1 ? ',' : '');
-            if (zone.aliasFor && zoneList.includes(zone.aliasFor)) {
+            if (!options.noAliases && zone.aliasFor && zoneList.includes(zone.aliasFor)) {
                 let aliasFor = zone.aliasFor;
                 const popAndC = (0, population_and_country_data_1.getPopulationAndCountries)(zoneId);
                 const aliasPopAndC = (0, population_and_country_data_1.getPopulationAndCountries)(aliasFor);
@@ -302,10 +302,15 @@ async function writeTimezones(options = {}) {
                 write(`  ${qt}${zoneId}${qt}: ${qt}${aliasFor}${qt}${delim}`);
             }
             else {
-                let ctt = cttsByZone.get(zoneId);
-                if (!ctt)
-                    ctt = zone.createCompactTransitionTable(options.fixRollbacks);
-                write(`  ${qt}${zoneId}${qt}: ${qt}${(0, population_and_country_data_1.appendPopulationAndCountries)(ctt, zoneId)}${qt}${delim}`);
+                if (options.posixFormat) {
+                    write(`  ${qt}${zoneId}${qt}: ${qt}${zone.createPosixRule()}${qt}${delim}`);
+                }
+                else {
+                    let ctt = cttsByZone.get(zoneId);
+                    if (!ctt)
+                        ctt = zone.createCompactTransitionTable(options.fixRollbacks);
+                    write(`  ${qt}${zoneId}${qt}: ${qt}${(0, population_and_country_data_1.appendPopulationAndCountries)(ctt, zoneId)}${qt}${delim}`);
+                }
             }
             resolve();
         });

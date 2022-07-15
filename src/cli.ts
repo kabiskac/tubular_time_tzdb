@@ -34,6 +34,7 @@ timezones.`)
   .option('--list', 'List available tz database versions.')
   .option('-m', 'Round all UTC offsets to whole minutes.')
   .option('-n, --no-backward', 'Skip the additional aliases in the backward file.')
+  .option('-N', 'Do not use aliases')
   .option('-o', 'Overwrite existing file/directory.')
   .option('-q', 'Display no progress messages, fewer warning messages.')
   .option('-R, --rearguard', 'Rearguard mode (skip vanguard features like negative DST).')
@@ -42,6 +43,7 @@ that is modify time zone data to prevent situations${nl}\
 where the calendar date goes backwards as well as the${nl}\
 hour and/or minute of the day.`)
   .option('-p, --packrat', 'Add additional timezones from the backzone file.')
+  .option('-P', 'Use POSIX format')
   .option('-s <zone-id>', 'ID/name for a single timezone/region to be rendered.')
   .option('--small', 'Apply presets for "small" timezone definitions.')
   .option('-t, --typescript', 'Output TypeScript instead of JSON.')
@@ -120,14 +122,16 @@ async function getUserInput(): Promise<string> {
     filtered: options.f,
     fixRollbacks: options.r,
     includeLeaps: options.i,
-    mode: options.rearguard ? TzMode.REARGUARD : (options.vanguard ? TzMode.VANGUARD : TzMode.MAIN),
+    mode: options.rearguard ? TzMode.REARGUARD : options.vanguard ? TzMode.VANGUARD : TzMode.MAIN,
     noBackward: !options.backward,
     packrat: options.packrat,
+    posixFormat: options.P,
     roundToMinutes: options.m,
     singleRegionOrZone: options.s,
     systemV: options.systemv,
     urlOrVersion: options.url,
-    zoneInfoDir: options.z
+    noAliases: options.N,
+    zoneInfoDir: options.z,
   };
 
   if (options.small)
