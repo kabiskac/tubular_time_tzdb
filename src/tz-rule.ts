@@ -125,7 +125,7 @@ export class TzRule {
 
     tz += ',' + date;
 
-    if (hour !== 7200)
+    //if (hour !== 7200)
       tz += '/' + formatPosixOffset(hour);
 
     let hourStd = this.atHour * 3600 + this.atMinute * 60;
@@ -144,7 +144,7 @@ export class TzRule {
 
     tz += ',' + date;
 
-    if (hourStd !== hour)
+    //if (hourStd !== hour)
       tz += '/' + formatPosixOffset(hourStd);
 
     return tz;

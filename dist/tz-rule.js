@@ -110,8 +110,8 @@ class TzRule {
             date = `M${dstRule.month}.${nth}.${dstRule.dayOfWeek - 1}`;
         }
         tz += ',' + date;
-        if (hour !== 7200)
-            tz += '/' + (0, tz_util_1.formatPosixOffset)(hour);
+        //if (hour !== 7200)
+        tz += '/' + (0, tz_util_1.formatPosixOffset)(hour);
         let hourStd = this.atHour * 3600 + this.atMinute * 60;
         if (this.atType === tz_util_1.ClockType.CLOCK_TYPE_UTC)
             hourStd += offset;
@@ -124,8 +124,8 @@ class TzRule {
             date = `M${this.month}.${nth}.${this.dayOfWeek - 1}`;
         }
         tz += ',' + date;
-        if (hourStd !== hour)
-            tz += '/' + (0, tz_util_1.formatPosixOffset)(hourStd);
+        //if (hourStd !== hour)
+        tz += '/' + (0, tz_util_1.formatPosixOffset)(hourStd);
         return tz;
     }
     toString() {
